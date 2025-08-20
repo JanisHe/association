@@ -57,7 +57,7 @@ def create_event(
         for phase, v in zip(["P", "S"], [vp, vs]):
             traveltime = hypo_distance_m / v
             arrivals["phase"].append(phase)
-            arrivals["trace_id"].append(stations.loc[stat_idx, "station_name"])
+            arrivals["trace_id"].append(stations.loc[stat_idx, "trace_id"])
             arrivals["peak_time"].append(origin_time + traveltime)
             arrivals["peak_value"].append(np.random.uniform(low=0.2, high=1.0))
 

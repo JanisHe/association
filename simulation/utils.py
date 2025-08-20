@@ -117,7 +117,7 @@ def moveout(
                 f"{pick.waveform_id.location_code}"
             )
             try:
-                station_idx = list(station_json["station_name"]).index(station_code)
+                station_idx = list(station_json["trace_id"]).index(station_code)
             except ValueError:
                 continue
 
