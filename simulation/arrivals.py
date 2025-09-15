@@ -51,13 +51,13 @@ def create_event(
         )
         epi_distance_m = degrees2kilometers(degrees=distance_degree) * 1000
         hypo_distance_m = np.sqrt(
-            (stations.loc[stat_idx, "elevation_m"] + depth) ** 2 + epi_distance_m**2
+            (stations.loc[stat_idx, "elevation"] + depth) ** 2 + epi_distance_m**2
         )
 
         for phase, v in zip(["P", "S"], [vp, vs]):
             traveltime = hypo_distance_m / v
             arrivals["phase"].append(phase)
-            arrivals["trace_id"].append(stations.loc[stat_idx, "trace_id"])
+            arrivals["trace_id"].append(stations.loc[stat_idx, "id"])
             arrivals["peak_time"].append(origin_time + traveltime)
             arrivals["peak_value"].append(np.random.uniform(low=0.2, high=1.0))
 
