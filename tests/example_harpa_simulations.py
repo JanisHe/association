@@ -105,7 +105,7 @@ catalog = nll_wrapper(catalog=catalog,
                       station_df=station_df,
                       nll_basepath="../NonLinLoc",
                       nll_executable="/work/software/nlloc/7.00.16/src/bin",
-                      vel_model="../metadata/rittershoffen.nll")
+                      vel_model="../metadata/velocity_model.nll")
 
 print("Time for association and NLL:", time.time() - stime)
 print(catalog)

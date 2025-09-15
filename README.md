@@ -10,6 +10,7 @@ or [Harpa](https://github.com/DaDaCheng/phase_association/tree/main) for seismic
      PyOcto requires Pyrocko: `https://github.com/pyrocko/pyrocko` 
   - `harpa`: `pip install -q git+https://github.com/DaDaCheng/phase_association.git`,   
      Harpa requires POT: `pip install POT`
+     Harpa requires scikit-learn: `pip install scikit-learn`
 
 ## Preparing files
 ### Stations
