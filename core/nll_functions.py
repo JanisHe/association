@@ -9,8 +9,7 @@ from typing import Union, Optional
 
 from obspy.core.event import read_events, Catalog
 
-from harpa.helpers import load_stations, area_limits
-from core.utils import sort_events
+from core.utils import sort_events, area_limits
 
 
 class Event2NLL:
@@ -32,7 +31,7 @@ class Event2NLL:
     def __init__(self,
                  catalog: Catalog,
                  nll_basepath: str,
-                 vel_model: str,
+                 vel_model: Union[str, pd.DataFrame],
                  stations_df: Union[str, pd.DataFrame],
                  nll_executable: str = "/work/software/nlloc/7.00.16/src/bin",
                  create_files: bool = True,
@@ -53,8 +52,11 @@ class Event2NLL:
         # Read stations
         if isinstance(stations_df, pd.DataFrame):
             self.df_stations = stations_df
+        elif isinstance(stations_df, str):
+            self.df_stations = pd.read_csv(stations_df)
         else:
-            self.df_stations = load_stations(station_json=stations_df)
+            msg = f"Could not read file {stations_df}, since it is no str or pd.Dataframe."
+            raise ValueError(msg)
 
         # Compute midpoint from all stations in station_json
         limits = area_limits(stations=self.df_stations)
@@ -316,8 +318,11 @@ def update_events_from_nll(station_df: Union[str, pd.DataFrame],
     # Load station_json as pandas dataframe
     if isinstance(station_df, pd.DataFrame):
         station_df = station_df
+    elif isinstance(station_df, str):
+        station_df = pd.read_csv(station_df)
     else:
-        station_df = load_stations(station_json=station_df)
+        msg = f"Could not read file {station_df}, since it is no str or pd.Dataframe."
+        raise ValueError(msg)
 
     # Loop over each event and pick and add network and location to waveform_id
     for event in event_lst:
@@ -332,18 +337,21 @@ def update_events_from_nll(station_df: Union[str, pd.DataFrame],
     return event_lst
 
 
-def check_nll_time(station_json: str,
+def check_nll_time(stations: Union[str, pd.DataFrame],
                    nll_basepath: str) -> bool:
     """
     Check whether for each station_picks all required files in time directory exist.
     If all files exist, function returns True, otherwise False
-    :param station_json:
+    :param stations:
     :param nll_basepath:
     """
-    if isinstance(station_json, pd.DataFrame):
-        df_stations = station_json
+    if isinstance(stations, pd.DataFrame):
+        df_stations = stations
+    elif isinstance(stations, str):
+        df_stations = pd.read_csv(stations)
     else:
-        df_stations = load_stations(station_json=station_json)
+        msg = f"Could not read file {stations}, since it is no str or pd.Dataframe."
+        raise ValueError(msg)
 
     for station_id in df_stations["id"]:
         name = station_id.split(".")[1]
@@ -362,7 +370,7 @@ def check_nll_time(station_json: str,
 def nll_wrapper(catalog: obspy.Catalog,
                 station_df: Union[str, pd.DataFrame],
                 nll_basepath: str = "../NonLinLoc",
-                vel_model: str = "../metadata/velocity.nll",
+                vel_model: Union[str, pd.DataFrame] = "../metadata/velocity.nll",
                 nll_executable: str = "/work/software/nlloc/7.00.16/src/bin") -> obspy.Catalog:
     """
     Wrapper to relocalise an obspy Catalog with NonLinLoc. The obspy catalog can be created, for example, by a phase
@@ -381,13 +389,13 @@ def nll_wrapper(catalog: obspy.Catalog,
     :param catalog: Catalog to relocalise data
     :param station_df: csv-filename or pandas dataframe that contains station information
     :param nll_basepath: Full pathname to save results from NonLinLoc
-    :param vel_model: Full pathname of velocity model
+    :param vel_model: Full pathname of velocity model of pandas dataframe of velocity model
     :param nll_executable: Executable of NonLinLoc
 
     :return: obspy Catalog with relocalised seismic events.
     """
     # Check files in NLL basepath directory
-    nll_time_files_exist = check_nll_time(station_json=station_df,
+    nll_time_files_exist = check_nll_time(stations=station_df,
                                           nll_basepath=nll_basepath)
     if nll_time_files_exist is True:
         create_nll_files = False

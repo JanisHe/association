@@ -7,6 +7,7 @@ import pyocto
 import obspy
 
 import pandas as pd
+from obspy import UTCDateTime
 from pyproj import Proj
 
 from typing import Optional
@@ -195,7 +196,8 @@ def interface_pyocto(stations: pd.DataFrame,
     picks = picks.rename(columns={"id": "station",
                                   "timestamp": "time",
                                   "type": "phase"})
-    picks["time"] = picks["time"].apply(lambda x: x.timestamp())  # Reformat time
+    picks["time"] = picks["time"].apply(lambda x: UTCDateTime(x))  # Convert time strings to obspy UTCDateTime
+    picks["time"] = picks["time"].apply(lambda x: x.datetime.timestamp())  # Reformat time
     picks["phase"] = picks["phase"].apply(lambda x: x.upper())  # Reformat phase to upper case letters
 
     # Convert stations to required format
