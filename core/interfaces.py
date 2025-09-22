@@ -1,6 +1,6 @@
 """
 Function for different association algorithms:
-HARPA, PyOcto, and GaMMA
+HARPA, PyOcto, and GaMMA (GaMMA is not implemented!)
 """
 import datetime
 import pyocto
@@ -24,6 +24,7 @@ from core.utils import area_limits, sort_events
 # TODO: Input: csv file with picks, output catalog with events
 #       Columns of csv file: trace_id (network.station.location), peak_time (UTCDateTime ???), peak_value, phase
 #       csv file needs to be created before (i.e., concatenating files from all stations and consider overlapping in time)
+# Doing several iterations of Harpa and PyOcto, comparing all catalogs and deciding which events all catalogs have in common?
 
 def interface_harpa(
     picks: pd.DataFrame,
@@ -212,8 +213,8 @@ def interface_pyocto(stations: pd.DataFrame,
         return obspy.Catalog()
 
     # Assign correct time to event
-    events["time"] = events["time"].apply(datetime.datetime.fromtimestamp, tz=datetime.timezone.utc)
-    assignments["time"] = assignments["time"].apply(datetime.datetime.fromtimestamp, tz=datetime.timezone.utc)
+    events["time"] = events["time"].apply(datetime.datetime.fromtimestamp)
+    assignments["time"] = assignments["time"].apply(datetime.datetime.fromtimestamp)
 
     # Merge events to pick assignments
     assignments = pd.merge(events, assignments, left_on="idx", right_on="event_idx", suffixes=("", "_pick"))
