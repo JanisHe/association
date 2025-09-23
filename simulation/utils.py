@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 
 
 def moveout(
-    catalog: obspy.Catalog,
-    station_json: pd.DataFrame,
-    ax_lat: Optional[plt.axes] = None,
-    ax_lon: Optional[plt.axes] = None,
-    csv_pick_files: Optional[list] = None,
+        catalog: obspy.Catalog,
+        stations: pd.DataFrame,
+        ax_lat: Optional[plt.axes] = None,
+        ax_lon: Optional[plt.axes] = None,
+        csv_pick_files: Optional[list] = None,
+        title: str = ""
 ):
     """
     Plotting moveout curve from catalog along time and latitude / longitude
@@ -30,6 +31,14 @@ def moveout(
         "tab:olive",
         "tab:cyan",
     ]
+
+    # Set title for ax_lat and ax_lon
+    if ax_lon and len(title) > 0:
+        ax_lon.set_title(title)
+    if ax_lat and len(title) > 0:
+        ax_lat.set_title(title)
+
+    # Estimate number of needed colors
     colors = colors * int(np.ceil(len(catalog) / len(colors)))
 
     # If pick_files available plot all available picks in grey
@@ -44,7 +53,7 @@ def moveout(
             # Find location of station from station_json
             station_code = pathlib.Path(filename).stem
             try:
-                station_idx = list(station_json["id"]).index(station_code)
+                station_idx = list(stations["id"]).index(station_code)
             except ValueError:
                 continue
             picks = pd.read_csv(filename)  # Read pick-file
@@ -55,14 +64,14 @@ def moveout(
                     csv_p_picks.append(
                         obspy.UTCDateTime(picks.loc[idx, "peak_time"]).datetime
                     )
-                    csv_p_latitudes.append(station_json.loc[station_idx, "latitude"])
-                    csv_p_longitudes.append(station_json.loc[station_idx, "longitude"])
+                    csv_p_latitudes.append(stations.loc[station_idx, "latitude"])
+                    csv_p_longitudes.append(stations.loc[station_idx, "longitude"])
                 elif picks.loc[idx, "phase"].lower() == "s":
                     csv_s_picks.append(
                         obspy.UTCDateTime(picks.loc[idx, "peak_time"]).datetime
                     )
-                    csv_s_latitudes.append(station_json.loc[station_idx, "latitude"])
-                    csv_s_longitudes.append(station_json.loc[station_idx, "longitude"])
+                    csv_s_latitudes.append(stations.loc[station_idx, "latitude"])
+                    csv_s_longitudes.append(stations.loc[station_idx, "longitude"])
 
         # Plot picks in grey
         if ax_lat:
@@ -117,18 +126,18 @@ def moveout(
                 f"{pick.waveform_id.location_code}"
             )
             try:
-                station_idx = list(station_json["id"]).index(station_code)
+                station_idx = list(stations["id"]).index(station_code)
             except ValueError:
                 continue
 
             if pick.phase_hint.lower() in ["p", "pg", "pn"]:
                 p_picks.append(pick.time.datetime)
-                p_latitudes.append(station_json.loc[station_idx, "latitude"])
-                p_longitudes.append(station_json.loc[station_idx, "longitude"])
+                p_latitudes.append(stations.loc[station_idx, "latitude"])
+                p_longitudes.append(stations.loc[station_idx, "longitude"])
             elif pick.phase_hint.lower() in ["s", "sg", "sn"]:
                 s_picks.append(pick.time.datetime)
-                s_latitudes.append(station_json.loc[station_idx, "latitude"])
-                s_longitudes.append(station_json.loc[station_idx, "longitude"])
+                s_latitudes.append(stations.loc[station_idx, "latitude"])
+                s_longitudes.append(stations.loc[station_idx, "longitude"])
 
         # Sort latitudes
         # zipped = zip(p_latitudes, p_picks)
