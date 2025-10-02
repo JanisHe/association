@@ -1,8 +1,15 @@
-# Seismic Phase Association for AIS Project
+# Seismic Phase Association with different Associators
 
 This packages contains scripts and interfaces to run either [PyOcto](https://github.com/yetinam/pyocto),
 [HARPA](https://github.com/DaDaCheng/phase_association/tree/main) or
-[GaMMA](https://github.com/AI4EPS/GaMMA) for seismic phase association on PhaseNet picks.
+[GaMMA](https://github.com/AI4EPS/GaMMA) for seismic phase association on seismic picks. Seismic data
+can be picked, for example, by using [PhaseNet](https://github.com/AI4EPS/PhaseNet)
+or available Deep-Learning pickers from [SeisBench](https://github.com/seisbench/seisbench).
+
+To learn how to pick seismic data, either follow the examples given in
+[SeisBench](https://github.com/seisbench/seisbench) or use
+[my package](https://github.com/JanisHe/seisbench_picking)
+to pick seismic phase onsets with SeisBench.
 
 ## Required packages
 * standard packages: `numpy`, `obspy`, `pandas`, `seisbench`, `matplotlib`
