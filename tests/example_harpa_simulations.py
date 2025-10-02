@@ -7,8 +7,8 @@ import seisbench.models as sbm  # noqa
 import multiprocessing as mp
 
 from simulation.arrivals import create_event, add_random_picks
-from core.nll_functions import nll_wrapper
-from core.interfaces import interface_harpa
+from association.core.nll_functions import nll_wrapper
+from association.core.interfaces import interface_harpa
 
 from simulation.utils import moveout
 import matplotlib.pyplot as plt
@@ -91,26 +91,24 @@ config["epoch_after_decay"] = 2000
 
 stime = time.time()
 catalog = interface_harpa(
-    picks=pick_df,
-    stations=station_df,
-    config=config,
-    verbose=verbose,
-    iterations=1
+    picks=pick_df, stations=station_df, config=config, verbose=verbose, iterations=1
 )
 
 print("Time needed for association:", time.time() - stime)
 
 # Start localisation with NonLinLoc
-catalog = nll_wrapper(catalog=catalog,
-                      station_df=station_df,
-                      nll_basepath="../NonLinLoc",
-                      nll_executable="/work/software/nlloc/7.00.16/src/bin",
-                      vel_model="../metadata/velocity_model.nll")
+catalog = nll_wrapper(
+    catalog=catalog,
+    station_df=station_df,
+    nll_basepath="../NonLinLoc",
+    nll_executable="/work/software/nlloc/7.00.16/src/bin",
+    vel_model="../metadata/velocity_model.nll",
+)
 
 print("Time for association and NLL:", time.time() - stime)
 print(catalog)
 
 # Plot moveout curve
 fig, ax = plt.subplots(nrows=1, ncols=1)
-moveout(catalog=catalog, station_json=stations, ax_lon=ax)
+moveout(catalog=catalog, stations=stations, ax_lon=ax)
 plt.show()
