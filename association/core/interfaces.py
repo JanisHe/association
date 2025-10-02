@@ -166,7 +166,15 @@ def interface_pyocto(
     :param pick_column_renaming: {"id": "station", "timestamp": "time", "type": "phase"}
     :return:
 
-    List of keywords: delta, velocity_model_path, p_velocity, s_velocity, zlim
+    Required parameters: zlim: tuple[int, int]
+    Required if velocity_model is used: velocity_model_path: pathname to save velocity model
+    Optional if velocity_model is used: tolerance, delta
+
+    Required if no velocity_model is used: p_velocity: constant P-velocity for model
+                                           s_velocity: constant S-velocity for model
+    Optional if no velocity_model is used: tolerance
+
+    Other parameters/keyword args will be handed over to the PyOcto associator class and will be checked there.
     """
     config = copy.deepcopy(config)  # Create copy of conifg to avoid overwriting
     area = area_limits(stations=stations)  # Get limits and center of area
@@ -178,7 +186,7 @@ def interface_pyocto(
             abs(max(area["longitude"]) - min(area["longitude"])),
         ]
     )
-    if velocity_model:
+    if isinstance(velocity_model, pd.DataFrame):
         pyocto.VelocityModel1D.create_model(
             model=velocity_model,
             delta=config["delta"] if config.get("delta") else 1,
@@ -187,7 +195,7 @@ def interface_pyocto(
             path=config["velocity_model_path"],
         )
         velocity_model = pyocto.VelocityModel1D(
-            path=config["velocity_model_path"],
+            path=config.pop("velocity_model_path"),
             tolerance=config["tolerance"] if config.get("tolerance") else 2.0,
         )
     else:  # Constant velocity model
