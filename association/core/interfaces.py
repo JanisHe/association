@@ -1,8 +1,9 @@
 """
 Function for different association algorithms:
-HARPA, PyOcto, and GaMMA (GaMMA is not implemented!)
+HARPA, PyOcto, and GaMMA
 """
 
+import os
 import datetime
 import pyocto
 import obspy
@@ -21,12 +22,188 @@ from obspy.core.event.base import WaveformStreamID
 
 from harpa import association  # noqa
 from association.core.utils import area_limits, sort_events
+from gamma.utils import association as association_gamma
 
 
-# TODO: Input: csv file with picks, output catalog with events
-#       Columns of csv file: trace_id (network.station.location), peak_time (UTCDateTime ???), peak_value, phase
-#       csv file needs to be created before (i.e., concatenating files from all stations and consider overlapping in time)
-# Doing several iterations of Harpa and PyOcto, comparing all catalogs and deciding which events all catalogs have in common?
+def interface_gamma(
+    picks: pd.DataFrame,
+    config: dict,
+    stations: pd.DataFrame,
+    velocity_model: Optional[pd.DataFrame] = None,
+    verbose: bool = False,
+) -> obspy.Catalog:
+    """
+
+    :param picks:
+    :param config:
+    :param stations:
+    :param velocity_model:
+    :param verbose:
+    :return:
+    """
+    # Get grid from latitude and longitude
+    limits = area_limits(stations=stations)
+    config["xlim_degree"] = limits["latitude"]
+    config["ylim_degree"] = limits["longitude"]
+
+    # Create projection from pyproj. Use a string that is then transfered to Proj (https://proj.org)
+    proj = Proj(
+        f"+proj=sterea +lat_0={limits['center'][0]} +lon_0={limits['center'][1]} +units=km"
+    )
+
+    # Compute boundaries for x and y
+    ylim1, xlim1 = proj(
+        latitude=config["xlim_degree"][0], longitude=config["ylim_degree"][0]
+    )
+    ylim2, xlim2 = proj(
+        latitude=config["xlim_degree"][1], longitude=config["ylim_degree"][1]
+    )
+    config["x(km)"] = [xlim1, xlim2]
+    config["y(km)"] = [ylim1, ylim2]
+
+    # Make config dict for GaMMA
+    # Config for earthquake location
+    config["ncpu"] = config.get("ncpu") or os.cpu_count()
+    config["dims"] = ["x(km)", "y(km)", "z(km)"]
+    config["use_dbscan"] = config.get("use_dbscan") or True  # GaMMA default is True
+    config["use_amplitude"] = (
+        config.get("use_amplitude") or False
+    )  # Set to False if not chosen by user
+    config["z(km)"] = config.get("z(km)")
+    config["method"] = config.get("method") or "BGMM"  # GMM is also possible
+    config["initial_points"] = config.get("inital_points") or [
+        1,
+        1,
+        1,
+    ]  # Use GaMMA default value
+    config["covariance_prior"] = config.get("covariance_prior") or [
+        5,
+        5,
+    ]  # Use GaMMA default value
+
+    # Build velocity model
+    if isinstance(velocity_model, pd.DataFrame):
+        config["eikonal"] = {
+            "vel": {
+                "p": velocity_model["vp"].to_list(),
+                "s": velocity_model["vs"].to_list(),
+                "z": velocity_model["depth"].to_list(),
+            },
+            "h": 1.0,
+            "xlim": config["x(km)"],
+            "ylim": config["y(km)"],
+            "zlim": config["z(km)"],
+        }
+        if config.get("vel"):
+            config.pop("vel")  # Remove vel from config if velocity model is given
+    else:
+        config["vel"] = config.get("vel") or {
+            "p": 6.0,
+            "s": 6.0 / 1.75,
+        }  # Use default GaMMA value
+
+    config["bfgs_bounds"] = (
+        (config["x(km)"][0] - 1, config["x(km)"][1] + 1),
+        (config["y(km)"][0] - 1, config["y(km)"][1] + 1),
+        (0, config["z(km)"][1] + 1),  # x
+        (None, None),  # t
+    )
+
+    # The initial number of clusters is determined by
+    # (Number of picks)/(Number of stations) * (oversampling factor).
+    config["oversample_factor"] = config.get("oversample_factor") or 10  # Default is 10
+
+    # DBSCAN
+    config["dbscan_eps"] = config.get("dbscan_eps") or 10  # Default is 10 s
+    config["dbscan_min_samples"] = config.get("dbscan_min_samples") or 3  # Default is 3
+
+    # Filtering
+    config["min_picks_per_eq"] = config.get("min_picks_per_eq")
+    config["min_p_picks_per_eq"] = config.get("min_p_picks_per_eq")
+    config["min_s_picks_per_eq"] = config.get("min_s_picks_per_eq")
+    config["max_sigma11"] = config.get("max_sigma11")
+    config["max_sigma22"] = config.get("max_sigma22") or 1.0
+    config["max_sigma12"] = config.get("max_sigma12")
+
+    # Print configs if verbose is True
+    if verbose:
+        print("Config for GaMMA:")
+        for key, value in config.items():
+            print(f"{key}: {value}")
+        print()
+
+    # Transform station coordinates
+    stations[["x(km)", "y(km)"]] = stations.apply(
+        lambda x: pd.Series(proj(longitude=x.longitude, latitude=x.latitude)), axis=1
+    )
+    stations["z(km)"] = stations["elevation"].apply(lambda depth: -depth / 1e3)
+
+    # Do association
+    catalogs, assignments = association_gamma(
+        picks, stations, config, method=config["method"]
+    )
+
+    catalog = pd.DataFrame(catalogs)
+    assignments = pd.DataFrame(
+        assignments, columns=["pick_index", "event_index", "gamma_score"]
+    )
+    if len(catalog) > 0:
+        catalog.sort_values(by=["time"], inplace=True, ignore_index=True)
+    else:
+        return obspy.Catalog([])
+
+    # Transform earthquake locations to lat long
+    event_lat = []
+    event_long = []
+    for x, y in zip(catalog["x(km)"], catalog["y(km)"]):
+        long, lat = proj(x, y, inverse=True)
+        event_lat.append(lat)
+        event_long.append(long)
+    catalog["latitude"] = event_lat
+    catalog["longitude"] = event_long
+
+    # Create earthquake catalog
+    event_lst = []  # Empty event list to save obspy events
+    # Loop over each event in GaMMA catalog
+    for event_count in range(len(catalog)):
+        event_idx = catalog["event_index"][event_count]
+        event_picks = [
+            picks.iloc[i]
+            for i in assignments[assignments["event_index"] == event_idx]["pick_index"]
+        ]
+
+        # Create dictionary for each station that contains P and S phases
+        picks_lst = []  # Create list with obspy picks class
+        for p in event_picks:
+            waveform_id = WaveformStreamID(
+                network_code=p["id"].split(".")[0],
+                station_code=p["id"].split(".")[1],
+                location_code=p["id"].split(".")[2],
+            )
+            pick = Pick(
+                time=obspy.UTCDateTime(p["timestamp"]),
+                waveform_id=waveform_id,
+                phase_hint=p["type"].upper(),
+            )
+            picks_lst.append(pick)
+
+        origin = Origin(
+            time=catalog["time"][event_count],
+            longitude=catalog["longitude"][event_count],
+            latitude=catalog["latitude"][event_count],
+            depth=catalog["z(km)"][event_count] * 1e3,
+        )
+
+        event = Event(
+            picks=picks_lst,
+            force_resource_id=True,
+            origins=[origin],
+        )
+
+        # Append event to final event list
+        event_lst.append(event)
+
+    return obspy.Catalog(event_lst)
 
 
 def interface_harpa(
