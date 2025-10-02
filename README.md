@@ -1,16 +1,18 @@
 # Seismic Phase Association for AIS Project
 
-This packages contains scripts and interfaces to run either [Pyocto](https://github.com/yetinam/pyocto)
-or [Harpa](https://github.com/DaDaCheng/phase_association/tree/main) for seismic phase association on PhaseNet picks.
+This packages contains scripts and interfaces to run either [PyOcto](https://github.com/yetinam/pyocto),
+[HARPA](https://github.com/DaDaCheng/phase_association/tree/main) or
+[GaMMA](https://github.com/AI4EPS/GaMMA) for seismic phase association on PhaseNet picks.
 
 ## Required packages
 * standard packages: `numpy`, `obspy`, `pandas`, `seisbench`, `matplotlib`
 * Packages for phase association:
-  - `pyocto`: `pip install pyocto`,
+  - `PyOcto`: `pip install pyocto`,
      PyOcto requires Pyrocko: `https://github.com/pyrocko/pyrocko`
-  - `harpa`: `pip install -q git+https://github.com/DaDaCheng/phase_association.git`,
-     Harpa requires POT: `pip install POT`
-     Harpa requires scikit-learn: `pip install scikit-learn`
+  - `HARPA`: `pip install -q git+https://github.com/DaDaCheng/phase_association.git`, <br>
+     HARPA requires POT: `pip install POT` <br>
+     HARPA requires scikit-learn: `pip install scikit-learn`
+  - `GaMMA`: `pip install git+https://github.com/wayneweiqiang/GaMMA.git`
 
 ## Preparing files
 ### Stations
@@ -70,12 +72,19 @@ for HARPA.
 - `vs`: S-velocity in km/s
 
 ## Running Phase Association
-Once all files are created, phase association is done by running the following code
+Once all files are created, read the different `.csv` files by using `pandas'` function `read_csv`.
+Then, phase association is started by running the following codes for the different associators
 (config dictionaries can be varied by user; use available keywords that can be found in
-the descriptions of [Pyocto](https://github.com/yetinam/pyocto)
-or [Harpa](https://github.com/DaDaCheng/phase_association/tree/main)):
+the descriptions of [Pyocto](https://github.com/yetinam/pyocto), [Harpa](https://github.com/DaDaCheng/phase_association/tree/main) or [GaMMA](https://github.com/AI4EPS/GaMMA)):
+
+### PyOcto
+In comparison to HARPA and GaMMA, PyOcto needs other keywords. Therefore, the columns of the given
+`.csv` files for the stations and picks are modified by using the arguments `station_colum_renaming`
+and `pick_column_renaming`. The key of the dictionary represents the original column name and the
+value is the required column name for PyOcto.
+
 ```
-from association.core.interfaces import interface_pyocto, interface_harpa
+from association.core.interfaces import interface_pyocto
 
 # Association with Pyocto
 config = {
@@ -88,6 +97,7 @@ config = {
     "n_s_picks": 3,
     "n_p_and_s_picks": 3,
 }
+
 catalog = interface_pyocto(
     picks=picks,
     stations=stations,
@@ -95,7 +105,13 @@ catalog = interface_pyocto(
     velocity_model=None,  # i.e. no velocity model is given
     station_column_renaming={"trace_id": "id", "elevation_m": "elevation"},
     pick_column_renaming={"id": "station", "timestamp": "time", "type": "phase"}
-    )
+)
+```
+
+### HARPA
+```
+from association.core.interfaces import interface_harpa
+
 
 # Association with HARPA
 config = {
@@ -113,14 +129,43 @@ config = {
     "epoch_before_decay": 2000,  # Training more epochs can help find more events
     "epoch_after_decay": 2000
 }
+
 catalog = interface_harpa(
     picks=picks,
     stations=stations,
     config=config
-    )
+)
 ```
 
-Both interface functions return an `obspy.Catalog` that contains all events, including
+### GaMMA
+```
+from association.core.interfaces import interface_gamma
+
+config = {
+    "vel": {
+        "p": 4.5,  # If velocity model is used then the velocity model will be used
+        "s": 2.6,
+    },
+    "z(km)": (0, 30),
+    "ncpu": 4,
+    "use_dbscan": True,
+    "use_amplitude": False,
+    "min_picks_per_eq": 6,
+    "min_p_picks_per_eq": 3,
+    "min_s_picks_per_eq": 3,
+    "max_sigma11": 2.0,
+}
+
+catalog = interface_gamma(
+    stations=station_df,
+    picks=pick_df,
+    velocity_model=velocity_model,
+    config=config,
+    verbose=True,
+)
+```
+
+All interface functions return an `obspy.Catalog` that contains all events, including
 the picks.
 
 ## Relocalisation with NonLinLoc
@@ -150,5 +195,6 @@ is created by `nll_wrapper`.
 ## Examples
 - `tests/example_harpa.py`: Association using HARPA.
 - `tests/example_pyocto.py`: Association using PyOcto.
+- `tests/example_gamma.py`: Association using GaMMA
 - `tests/example_harpa_simulations.py`: Simulates events in area, adds random picks and associates
    simulated picks with HARPA.
