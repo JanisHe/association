@@ -83,8 +83,8 @@ config = {
 catalog = interface_pyocto(
     picks=picks,
     stations=stations,
+    config=config,
     velocity_model=None,  # i.e. no velocity model is given
-    **config
     )
 
 # Association with HARPA

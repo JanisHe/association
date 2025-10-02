@@ -6,6 +6,7 @@ HARPA, PyOcto, and GaMMA (GaMMA is not implemented!)
 import datetime
 import pyocto
 import obspy
+import copy
 
 import pandas as pd
 from obspy import UTCDateTime
@@ -150,20 +151,20 @@ def interface_harpa(
 def interface_pyocto(
     stations: pd.DataFrame,
     picks: pd.DataFrame,
+    config: dict,
     velocity_model: Optional[pd.DataFrame] = None,
-    **pyocto_kwargs,
 ) -> obspy.Catalog:
     """
 
     :param stations:
     :param picks:
+    :param config
     :param velocity_model:
-    :param pyocto_kwargs:
     :return:
 
-    List of keywords: delta, zdist, velocity_model_path, p_velocity, s_velocity, zlim
+    List of keywords: delta, velocity_model_path, p_velocity, s_velocity, zlim
     """
-
+    config = copy.deepcopy(config)  # Create copy of conifg to avoid overwriting
     area = area_limits(stations=stations)  # Get limits and center of area
 
     # Build velocity model (if available)
@@ -176,24 +177,20 @@ def interface_pyocto(
     if velocity_model:
         pyocto.VelocityModel1D.create_model(
             model=velocity_model,
-            delta=pyocto_kwargs["delta"] if pyocto_kwargs.get("delta") else 1,
+            delta=config["delta"] if config.get("delta") else 1,
             xdist=degrees2kilometers(degrees=max_degree),
-            zdist=max(pyocto_kwargs["zdist"]),
-            path=pyocto_kwargs["velocity_model_path"],
+            zdist=max(config["zlim"]),
+            path=config["velocity_model_path"],
         )
         velocity_model = pyocto.VelocityModel1D(
-            path=pyocto_kwargs["velocity_model_path"],
-            tolerance=pyocto_kwargs["tolerance"]
-            if pyocto_kwargs.get("tolerance")
-            else 2.0,
+            path=config["velocity_model_path"],
+            tolerance=config["tolerance"] if config.get("tolerance") else 2.0,
         )
     else:  # Constant velocity model
         velocity_model = pyocto.VelocityModel0D(
-            p_velocity=pyocto_kwargs.pop("p_velocity"),
-            s_velocity=pyocto_kwargs.pop("s_velocity"),
-            tolerance=pyocto_kwargs["tolerance"]
-            if pyocto_kwargs.get("tolerance")
-            else 2.0,
+            p_velocity=config.pop("p_velocity"),
+            s_velocity=config.pop("s_velocity"),
+            tolerance=config["tolerance"] if config.get("tolerance") else 2.0,
         )
 
     # Set up associator from PyOcto
@@ -201,7 +198,7 @@ def interface_pyocto(
         lat=(min(stations["latitude"]), max(stations["latitude"])),
         lon=(min(stations["longitude"]), max(stations["longitude"])),
         velocity_model=velocity_model,
-        **pyocto_kwargs,
+        **config,
     )
 
     # Convert stations to PyOcto format (i.e. id, latitude, longitude, elevation)

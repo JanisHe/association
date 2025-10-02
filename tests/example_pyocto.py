@@ -1,7 +1,9 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
-from core.interfaces import interface_pyocto
-from core.nll_functions import nll_wrapper
+from association.core.interfaces import interface_pyocto
+from association.core.nll_functions import nll_wrapper
+from simulation.utils import moveout
 
 
 # Load stations
@@ -26,15 +28,22 @@ config = {
 catalog = interface_pyocto(
     stations=station_df,
     picks=pick_df,
+    config=config,
     velocity_model=None,
-    **config
 )
 
 # Start localisation with NonLinLoc
-catalog = nll_wrapper(catalog=catalog,
-                      station_df=station_df,
-                      nll_basepath="../NonLinLoc",
-                      nll_executable="/work/software/nlloc/7.00.16/src/bin",
-                      vel_model="../metadata/velocity_model.nll")
+catalog = nll_wrapper(
+    catalog=catalog,
+    station_df=station_df,
+    nll_basepath="../NonLinLoc",
+    nll_executable="/work/software/nlloc/7.00.16/src/bin",
+    vel_model="../metadata/velocity_model.nll",
+)
 
 print(catalog)
+
+# Plot moveout curve
+fig, ax = plt.subplots(nrows=1, ncols=1)
+moveout(catalog=catalog, stations=station_df, ax_lon=ax)
+plt.show()
