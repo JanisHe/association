@@ -28,6 +28,10 @@ A `.csv` file that contains station information (note the file header!):
 - `longitude`: Longitude of station in degree
 - `elevation_m`: Elevation of station in m above sea level
 
+Since the column for the table above are only valid for HARPA, the column
+names will be changed for PyOcto. This is done by defining a dictionary
+as an argument of the function `interface_pytocto` (see example below).
+
 ### PhaseNet picks
 A `.csv` file that contains all picks from all available stations:
 
@@ -43,6 +47,10 @@ A `.csv` file that contains all picks from all available stations:
 - `timestamp`: Time of pick from PhaseNet
 - `prob`: Pick probability of PhaseNet
 - `type`: Phase type (Either P or S)
+
+For PyOcto, the column names will be changed. This is done by defining
+a dictionary as an argument of the function `interface_pytocto` (see
+example below).
 
 ### Velocity Model (Optional for PyOcto, required for NonLinLoc)
 A `.csv` file that contains a velocity model of the area. If the velocity model is unknown,
