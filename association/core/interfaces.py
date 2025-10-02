@@ -153,6 +153,8 @@ def interface_pyocto(
     picks: pd.DataFrame,
     config: dict,
     velocity_model: Optional[pd.DataFrame] = None,
+    station_column_renaming: Optional[dict] = None,
+    pick_column_renaming: Optional[dict] = None,
 ) -> obspy.Catalog:
     """
 
@@ -160,6 +162,8 @@ def interface_pyocto(
     :param picks:
     :param config
     :param velocity_model:
+    :param station_column_renaming: {"trace_id": "id", "elevation_m": "elevation"}
+    :param pick_column_renaming: {"id": "station", "timestamp": "time", "type": "phase"}
     :return:
 
     List of keywords: delta, velocity_model_path, p_velocity, s_velocity, zlim
@@ -201,13 +205,15 @@ def interface_pyocto(
         **config,
     )
 
-    # Convert stations to PyOcto format (i.e. id, latitude, longitude, elevation)
-    stations = stations.rename(columns={"trace_id": "id", "elevation_m": "elevation"})
+    # Convert stations to PyOcto format (i.e. required column names are 'id', 'latitude',
+    # 'longitude', 'elevation')
+    if station_column_renaming:
+        stations = stations.rename(columns=station_column_renaming)
 
-    # Convert picks to PyOcto format (i.e. time, station, phase)
-    picks = picks.rename(
-        columns={"id": "station", "timestamp": "time", "type": "phase"}
-    )
+    # Convert picks to PyOcto format (i.e. required column names are 'time', 'station', 'phase')
+    if pick_column_renaming:
+        picks = picks.rename(columns=pick_column_renaming)
+
     picks["time"] = picks["time"].apply(
         lambda x: UTCDateTime(x)
     )  # Convert time strings to obspy UTCDateTime

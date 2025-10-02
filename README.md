@@ -85,6 +85,8 @@ catalog = interface_pyocto(
     stations=stations,
     config=config,
     velocity_model=None,  # i.e. no velocity model is given
+    station_column_renaming={"trace_id": "id", "elevation_m": "elevation"},
+    pick_column_renaming={"id": "station", "timestamp": "time", "type": "phase"}
     )
 
 # Association with HARPA
