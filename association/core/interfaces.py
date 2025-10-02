@@ -153,8 +153,8 @@ def interface_pyocto(
     picks: pd.DataFrame,
     config: dict,
     velocity_model: Optional[pd.DataFrame] = None,
-    station_column_renaming: Optional[dict] = None,
-    pick_column_renaming: Optional[dict] = None,
+    station_column_renaming: Optional[dict[str, str]] = None,
+    pick_column_renaming: Optional[dict[str, str]] = None,
 ) -> obspy.Catalog:
     """
 
@@ -178,6 +178,16 @@ def interface_pyocto(
     """
     config = copy.deepcopy(config)  # Create copy of conifg to avoid overwriting
     area = area_limits(stations=stations)  # Get limits and center of area
+
+    # Check if velocity_model_path is in config if velocity model is used
+    if isinstance(velocity_model, pd.DataFrame):
+        try:
+            config["velocity_model_path"]
+        except KeyError:
+            msg = (
+                "Key 'velocity_model_path' is missing in config to save velocity model."
+            )
+            raise ValueError(msg)
 
     # Build velocity model (if available)
     max_degree = max(
