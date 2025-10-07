@@ -30,6 +30,8 @@ def interface_gamma(
     config: dict,
     stations: pd.DataFrame,
     velocity_model: Optional[pd.DataFrame] = None,
+    station_column_renaming: Optional[dict[str, str]] = None,
+    pick_column_renaming: Optional[dict[str, str]] = None,
     verbose: bool = False,
 ) -> obspy.Catalog:
     """
@@ -38,9 +40,20 @@ def interface_gamma(
     :param config:
     :param stations:
     :param velocity_model:
+    :param station_column_renaming:
+    :param pick_column_renaming:
     :param verbose:
     :return:
     """
+    # Convert stations to GaMMA format (i.e. required column names are 'id', 'latitude',
+    # 'longitude', 'elevation')
+    if station_column_renaming:
+        stations = stations.rename(columns=station_column_renaming)
+
+    # Convert picks to GaMMA format (i.e. required column names are 'id', 'timestamp', 'prob', 'phase')
+    if pick_column_renaming:
+        picks = picks.rename(columns=pick_column_renaming)
+
     # Get grid from latitude and longitude
     limits = area_limits(stations=stations)
     config["xlim_degree"] = limits["latitude"]
@@ -213,6 +226,8 @@ def interface_harpa(
     verbose: int = 10,
     iterations: int = 3,
     second_pass: bool = False,
+    station_column_renaming: Optional[dict[str, str]] = None,
+    pick_column_renaming: Optional[dict[str, str]] = None,
 ) -> obspy.Catalog:
     """
 
@@ -222,8 +237,18 @@ def interface_harpa(
     :param verbose:
     :param iterations:
     :param second_pass:
+    :param station_column_renaming:
+    :param pick_column_renaming:
     :return:
     """
+    # Convert stations to GaMMA format (i.e. required column names are 'id', 'latitude',
+    # 'longitude', 'elevation')
+    if station_column_renaming:
+        stations = stations.rename(columns=station_column_renaming)
+
+    # Convert picks to GaMMA format (i.e. required column names are 'id', 'timestamp', 'prob', 'phase')
+    if pick_column_renaming:
+        picks = picks.rename(columns=pick_column_renaming)
 
     x0 = stations["longitude"].mean()
     y0 = stations["latitude"].mean()
