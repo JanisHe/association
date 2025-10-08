@@ -90,7 +90,7 @@ In comparison to HARPA and GaMMA, PyOcto needs other keywords. Therefore, the co
 and `pick_column_renaming`. The key of the dictionary represents the original column name and the
 value is the required column name for PyOcto.
 
-```
+```python
 from association.core.interfaces import interface_pyocto
 
 # Association with Pyocto
@@ -116,7 +116,7 @@ catalog = interface_pyocto(
 ```
 
 ### HARPA
-```
+```python
 from association.core.interfaces import interface_harpa
 
 
@@ -145,7 +145,7 @@ catalog = interface_harpa(
 ```
 
 ### GaMMA
-```
+```python
 from association.core.interfaces import interface_gamma
 
 config = {
@@ -178,8 +178,12 @@ the picks.
 ## Relocalisation with NonLinLoc
 After seismic phase association, the events can be relocalised using [NonLinLoc](http://alomax.free.fr/nlloc/).
 Therefore, a velocity model (see above) is required.
+In the following, two different approaches are described to use NLL
+- semi-automatic approach: does relocalisation using a single function
+- manual approach: creating `.obs` file(s) and localise with own methods
 
-```
+### Semi automatic approach
+```python
 from association.core.nll_functions import nll_wrapper
 
 catalog = nll_wrapper(catalog=catalog,
@@ -198,6 +202,21 @@ catalog = nll_wrapper(catalog=catalog,
 If `nll_basepath` already exists, the `time` and `model` files will not be
 created by NonLinLoc. This is only done during the first run, when `nll_basepath`
 is created by `nll_wrapper`.
+
+### Manual Approach
+```python
+from association.core.nll_functions import Event2NLL
+
+# Convert catalogue to NLL format
+nll = Event2NLL(catalog=catalog,  # Previously derived seismicity catalog
+                nll_basepath="../NonLinLoc",
+                vel_model=vel_model,  # Velocity model for NLL
+                stations_df=stations, # pandas Dataframe for stations
+                )
+```
+
+The `.obs` files are saved in `nll_basepath/obs` (e.g. `../NonLinLoc/obs/`).
+From here, the files can be copied to a different NonLinLoc project for relocalisation.
 
 ### Notes on NonLinLoc Implementation
 Note the NLL implementation can be modified in `association.core.nll_functions` since
