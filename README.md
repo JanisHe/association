@@ -182,7 +182,7 @@ In the following, two different approaches are described to use NLL
 - semi-automatic approach: does relocalisation using a single function
 - manual approach: creating `.obs` file(s) and localise with own methods
 
-### Semi automatic approach
+### Semi-Automatic Approach
 ```python
 from association.core.nll_functions import nll_wrapper
 
