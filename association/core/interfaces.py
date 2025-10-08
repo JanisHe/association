@@ -21,7 +21,7 @@ from obspy.core.event.event import Event
 from obspy.core.event.base import WaveformStreamID
 
 from harpa import association  # noqa
-from association.core.utils import area_limits, sort_events
+from association.core.utils import area_limits, sort_events, unique_picks_and_stations
 from gamma.utils import association as association_gamma
 
 
@@ -53,6 +53,11 @@ def interface_gamma(
     # Convert picks to GaMMA format (i.e. required column names are 'id', 'timestamp', 'prob', 'phase')
     if pick_column_renaming:
         picks = picks.rename(columns=pick_column_renaming)
+
+    # Check if each id in picks as information in stations
+    unique_picks_and_stations(
+        pick_ids=list(set(picks["id"].to_list())), station_ids=stations["id"].to_list()
+    )
 
     # Get grid from latitude and longitude
     limits = area_limits(stations=stations)
@@ -249,6 +254,11 @@ def interface_harpa(
     # Convert picks to GaMMA format (i.e. required column names are 'id', 'timestamp', 'prob', 'phase')
     if pick_column_renaming:
         picks = picks.rename(columns=pick_column_renaming)
+
+    # Check if each id in picks as information in stations
+    unique_picks_and_stations(
+        pick_ids=list(set(picks["id"].to_list())), station_ids=stations["id"].to_list()
+    )
 
     x0 = stations["longitude"].mean()
     y0 = stations["latitude"].mean()

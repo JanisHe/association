@@ -1,3 +1,4 @@
+import warnings
 import pandas as pd
 
 
@@ -35,3 +36,19 @@ def sort_events(events: list):
         return events
 
     return sorted_events
+
+
+def unique_picks_and_stations(pick_ids: list[str], station_ids: list[str]) -> None:
+    """
+    Check if each id in picks as information in stations
+
+    :param pick_ids:
+    :param station_ids:
+    :return:
+    """
+    for pick_id in pick_ids:
+        if pick_id in station_ids:
+            pick_ids.remove(pick_id)
+            station_ids.remove(pick_id)
+
+    warnings.warn(f"Found picks from stations without station information: {pick_ids}")
