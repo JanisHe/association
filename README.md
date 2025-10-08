@@ -199,6 +199,10 @@ If `nll_basepath` already exists, the `time` and `model` files will not be
 created by NonLinLoc. This is only done during the first run, when `nll_basepath`
 is created by `nll_wrapper`.
 
+### Notes on NonLinLoc Implementation
+Note the NLL implementation can be modified in `association.core.nll_functions` since
+some settings for NLL are hard coded.
+
 ## Examples
 - `tests/example_harpa.py`: Association using HARPA.
 - `tests/example_pyocto.py`: Association using PyOcto (including velocity model).
