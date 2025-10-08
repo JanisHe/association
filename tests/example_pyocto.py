@@ -12,16 +12,20 @@ station_df = pd.read_csv("../metadata/stations.csv")
 # Read picks
 pick_df = pd.read_csv("../metadata/picks.csv")
 
+# Load velocity model
+vel_model = pd.read_csv("../metadata/velocity_model.nll")
+
 # Define config for PyOcto
 config = {
-    "p_velocity": 4500,
-    "s_velocity": 2600,
+    # "p_velocity": 4500,  # Not necessary when velocity model is used
+    # "s_velocity": 2600,  # Not necessary when velocity model is used
     "zlim": (0, 30),
     "time_before": 10,
     "n_picks": 6,
     "n_p_picks": 3,
     "n_s_picks": 3,
     "n_p_and_s_picks": 3,
+    "velocity_model_filename": "../metadata/velocity_model_pyocto",
 }
 
 # Start association
@@ -29,7 +33,7 @@ catalog = interface_pyocto(
     stations=station_df,
     picks=pick_df,
     config=config,
-    velocity_model=None,
+    velocity_model=vel_model,  # If p_- and s_velocity are defined in config set to None
     station_column_renaming={"trace_id": "id", "elevation_m": "elevation"},
     pick_column_renaming={"id": "station", "timestamp": "time", "type": "phase"},
 )

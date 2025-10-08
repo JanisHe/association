@@ -201,7 +201,7 @@ is created by `nll_wrapper`.
 
 ## Examples
 - `tests/example_harpa.py`: Association using HARPA.
-- `tests/example_pyocto.py`: Association using PyOcto.
+- `tests/example_pyocto.py`: Association using PyOcto (including velocity model).
 - `tests/example_gamma.py`: Association using GaMMA
 - `tests/example_harpa_simulations.py`: Simulates events in area, adds random picks and associates
    simulated picks with HARPA.

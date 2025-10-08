@@ -369,7 +369,7 @@ def interface_pyocto(
     :return:
 
     Required parameters: zlim: tuple[int, int]
-    Required if velocity_model is used: velocity_model_path: pathname to save velocity model
+    Required if velocity_model is used: velocity_model_filename: pathname to save velocity model
     Optional if velocity_model is used: tolerance, delta
 
     Required if no velocity_model is used: p_velocity: constant P-velocity for model
@@ -384,10 +384,11 @@ def interface_pyocto(
     # Check if velocity_model_path is in config if velocity model is used
     if isinstance(velocity_model, pd.DataFrame):
         try:
-            config["velocity_model_path"]
+            config["velocity_model_filename"]
         except KeyError:
             msg = (
-                "Key 'velocity_model_path' is missing in config to save velocity model."
+                "Key 'velocity_model_filename' is missing in config to save velocity model."
+                "Use full a path including the filename."
             )
             raise ValueError(msg)
 
@@ -404,10 +405,10 @@ def interface_pyocto(
             delta=config["delta"] if config.get("delta") else 1,
             xdist=degrees2kilometers(degrees=max_degree),
             zdist=max(config["zlim"]),
-            path=config["velocity_model_path"],
+            path=config["velocity_model_filename"],
         )
         velocity_model = pyocto.VelocityModel1D(
-            path=config.pop("velocity_model_path"),
+            path=config.pop("velocity_model_filename"),
             tolerance=config["tolerance"] if config.get("tolerance") else 2.0,
         )
     else:  # Constant velocity model
