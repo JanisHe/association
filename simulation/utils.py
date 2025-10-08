@@ -1,6 +1,5 @@
 from typing import Optional
 
-import pathlib
 import obspy
 import pandas as pd
 import numpy as np
@@ -8,12 +7,12 @@ import matplotlib.pyplot as plt
 
 
 def moveout(
-        catalog: obspy.Catalog,
-        stations: pd.DataFrame,
-        ax_lat: Optional[plt.axes] = None,
-        ax_lon: Optional[plt.axes] = None,
-        csv_pick_files: Optional[list] = None,
-        title: str = ""
+    catalog: obspy.Catalog,
+    stations: pd.DataFrame,
+    ax_lat: Optional[plt.axes] = None,
+    ax_lon: Optional[plt.axes] = None,
+    all_picks: Optional[pd.DataFrame] = None,
+    title: str = "",
 ):
     """
     Plotting moveout curve from catalog along time and latitude / longitude
@@ -48,30 +47,32 @@ def moveout(
     csv_s_latitudes = []
     csv_p_longitudes = []
     csv_s_longitudes = []
-    if csv_pick_files:
-        for filename in csv_pick_files:
-            # Find location of station from station_json
-            station_code = pathlib.Path(filename).stem
-            try:
-                station_idx = list(stations["id"]).index(station_code)
-            except ValueError:
-                continue
-            picks = pd.read_csv(filename)  # Read pick-file
 
-            # Loop over each entry in csv-file
-            for idx in range(len(picks)):
-                if picks.loc[idx, "phase"].lower() == "p":
-                    csv_p_picks.append(
-                        obspy.UTCDateTime(picks.loc[idx, "peak_time"]).datetime
-                    )
-                    csv_p_latitudes.append(stations.loc[station_idx, "latitude"])
-                    csv_p_longitudes.append(stations.loc[station_idx, "longitude"])
-                elif picks.loc[idx, "phase"].lower() == "s":
-                    csv_s_picks.append(
-                        obspy.UTCDateTime(picks.loc[idx, "peak_time"]).datetime
-                    )
-                    csv_s_latitudes.append(stations.loc[station_idx, "latitude"])
-                    csv_s_longitudes.append(stations.loc[station_idx, "longitude"])
+    # Plot all picks
+    if isinstance(all_picks, pd.DataFrame):
+        # Loop over each pick in all_picks
+        for pick_idx in range(len(all_picks)):
+            # Find location (latitude and longitude) from stations dataframe
+            station_id = all_picks.loc[pick_idx, "id"]
+            try:
+                station_idx = list(stations["id"]).index(station_id)
+                latitude = stations.loc[station_idx, "latitude"]
+                longitude = stations.loc[station_idx, "longitude"]
+            except ValueError:  # If no station ID is found continue with next pick
+                continue
+
+            if all_picks.loc[pick_idx, "type"].lower() == "p":
+                csv_p_picks.append(
+                    obspy.UTCDateTime(all_picks["timestamp"][pick_idx]).datetime
+                )
+                csv_p_latitudes.append(latitude)
+                csv_p_longitudes.append(longitude)
+            elif all_picks.loc[pick_idx, "type"].lower() == "s":
+                csv_s_picks.append(
+                    obspy.UTCDateTime(all_picks["timestamp"][pick_idx]).datetime
+                )
+                csv_s_latitudes.append(latitude)
+                csv_s_longitudes.append(longitude)
 
         # Plot picks in grey
         if ax_lat:
