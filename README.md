@@ -25,17 +25,17 @@ to pick seismic phase onsets with SeisBench.
 ### Stations
 A `.csv` file that contains station information (note the file header!):
 
-| id         | latitude | longitude | elevation_m |
-|------------|----------|-----------|-------------|
-| FO.BETS.00 | 48.89357 | 7.92429   | 146         |
-| RG.RITT.00 | 48.89436 | 7.96103   | 138         |
-| RG.KUHL.00 | 48.91473 | 7.92996   | 176         |
-| FO.OPS.00  | 48.92126 | 7.88278   | 198         |
+| id         | latitude | longitude | elevation |
+|------------|----------|-----------|-----------|
+| FO.BETS.00 | 48.89357 | 7.92429   | 146       |
+| RG.RITT.00 | 48.89436 | 7.96103   | 138       |
+| RG.KUHL.00 | 48.91473 | 7.92996   | 176       |
+| FO.OPS.00  | 48.92126 | 7.88278   | 198       |
 
 - `id`: ID of each station (`network.station.location`)
 - `latitude`: Latitude of station in degree
 - `longitude`: Longitude of station in degree
-- `elevation_m`: Elevation of station in m above sea level
+- `elevation`: Elevation of station in m above sea level
 
 Since the column for the table above are only valid for HARPA, the column
 names will be changed for PyOcto. This is done by defining a dictionary
