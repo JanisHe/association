@@ -5,7 +5,6 @@ HARPA, PyOcto, and GaMMA
 
 import os
 import datetime
-import pyocto
 import obspy
 import copy
 
@@ -20,9 +19,7 @@ from obspy.core.event.origin import Pick, Origin
 from obspy.core.event.event import Event
 from obspy.core.event.base import WaveformStreamID
 
-from harpa import association  # noqa
 from association.core.utils import area_limits, sort_events, unique_picks_and_stations
-from gamma.utils import association as association_gamma
 
 
 def interface_gamma(
@@ -45,6 +42,9 @@ def interface_gamma(
     :param verbose:
     :return:
     """
+    # Import GaMMA here to avoid import when other associator is used
+    from gamma.utils import association as association_gamma
+
     # Convert stations to GaMMA format (i.e. required column names are 'id', 'latitude',
     # 'longitude', 'elevation')
     if station_column_renaming:
@@ -246,6 +246,9 @@ def interface_harpa(
     :param pick_column_renaming:
     :return:
     """
+    # Import HARPA here to avoid import of other associators
+    from harpa import association  # noqa
+
     # Convert stations to GaMMA format (i.e. required column names are 'id', 'latitude',
     # 'longitude', 'elevation')
     if station_column_renaming:
@@ -388,6 +391,9 @@ def interface_pyocto(
 
     Other parameters/keyword args will be handed over to the PyOcto associator class and will be checked there.
     """
+    # Import PyOcto to avoid import of other associators
+    import pyocto
+
     config = copy.deepcopy(config)  # Create copy of conifg to avoid overwriting
     area = area_limits(stations=stations)  # Get limits and center of area
 
