@@ -27,6 +27,8 @@ def interface_gamma(
     config: dict,
     stations: pd.DataFrame,
     velocity_model: Optional[pd.DataFrame] = None,
+    iterations: int = 3,
+    second_pass: bool = False,
     station_column_renaming: Optional[dict[str, str]] = None,
     pick_column_renaming: Optional[dict[str, str]] = None,
     verbose: bool = False,
@@ -37,6 +39,8 @@ def interface_gamma(
     :param config:
     :param stations:
     :param velocity_model:
+    :param iterations:
+    :param second_pass:
     :param station_column_renaming:
     :param pick_column_renaming:
     :param verbose:
@@ -182,6 +186,8 @@ def interface_gamma(
 
     # Create earthquake catalog
     event_lst = []  # Empty event list to save obspy events
+    remaining_picks = copy.copy(picks)  # Copy picks for second pass iteration
+
     # Loop over each event in GaMMA catalog
     for event_count in range(len(catalog)):
         event_idx = catalog["event_index"][event_count]
@@ -190,13 +196,23 @@ def interface_gamma(
             for i in assignments[assignments["event_index"] == event_idx]["pick_index"]
         ]
 
+        # Remove column from remaining_picks if the pick is used for an event
+        for i in assignments[assignments["event_index"] == event_idx]["pick_index"]:
+            remaining_picks.drop(index=i, inplace=True)
+
         # Create dictionary for each station that contains P and S phases
         picks_lst = []  # Create list with obspy picks class
         for p in event_picks:
+            try:
+                network_code, station_code, location_code = p["id"].split(".")
+            except ValueError:
+                network_code, station_code = p["id"].split(".")
+                location_code = ""
+
             waveform_id = WaveformStreamID(
-                network_code=p["id"].split(".")[0],
-                station_code=p["id"].split(".")[1],
-                location_code=p["id"].split(".")[2],
+                network_code=network_code,
+                station_code=station_code,
+                location_code=location_code,
             )
             pick = Pick(
                 time=obspy.UTCDateTime(p["timestamp"]),
@@ -221,7 +237,27 @@ def interface_gamma(
         # Append event to final event list
         event_lst.append(event)
 
-    return obspy.Catalog(event_lst)
+    # Start second pass iterations to associate events from remaining picks
+    if iterations > 1:
+        remaining_picks.reset_index(
+            drop=True, inplace=True
+        )  # Reindexing remaining picks
+        second_pass_events = interface_gamma(
+            picks=remaining_picks,
+            stations=stations,
+            velocity_model=velocity_model,
+            config=config,
+            iterations=iterations - 1,
+            verbose=False,
+        )
+        event_lst += second_pass_events
+
+    if second_pass is True:
+        return event_lst
+    else:
+        # Sort event_lst
+        event_lst = sort_events(events=event_lst)
+        return obspy.Catalog(events=event_lst)
 
 
 def interface_harpa(
@@ -310,16 +346,25 @@ def interface_harpa(
     for event_count in range(len(catalog_df)):
         event_idx = catalog_df["event_index"][event_count]
         event_picks_df = pick_df_out[pick_df_out["event_index"] == event_idx]
-        # event_picks = [pick_df_out.iloc[i] for i in range(pick_df_out[pick_df_out["event_index"] == event_idx])]
 
         # Create dictionary for each station that contains P and S phases
         # Create list with obspy picks class
         picks_lst = []
         for idx in list(event_picks_df.index):
+            try:
+                network_code, station_code, location_code = event_picks_df.loc[
+                    idx, "station_id"
+                ].split(".")
+            except ValueError:
+                network_code, station_code = event_picks_df.loc[
+                    idx, "station_id"
+                ].split(".")
+                location_code = ""
+
             waveform_id = WaveformStreamID(
-                network_code=event_picks_df.loc[idx, "station_id"].split(".")[0],
-                station_code=event_picks_df.loc[idx, "station_id"].split(".")[1],
-                location_code=event_picks_df.loc[idx, "station_id"].split(".")[2],
+                network_code=network_code,
+                station_code=station_code,
+                location_code=location_code,
             )
             pick = Pick(
                 time=obspy.UTCDateTime(event_picks_df.loc[idx, "timestamp"]),
@@ -350,7 +395,7 @@ def interface_harpa(
             config=config,
             stations=stations,
             verbose=verbose,
-            second_pass=True,
+            second_pass=True,  # TODO: is second pass required, since only iterations is needed?
             iterations=iterations - 1,
         )
         event_lst += second_pass_events
@@ -501,8 +546,16 @@ def interface_pyocto(
                     )
                 }
             )
+
         # Create obspy pick
-        network_code, station_code, location = assignments.loc[i, "station"].split(".")
+        try:
+            network_code, station_code, location = assignments.loc[i, "station"].split(
+                "."
+            )
+        except ValueError:
+            network_code, station_code = assignments.loc[i, "station"].split(".")
+            location = ""
+
         waveform_id = WaveformStreamID(
             network_code=network_code, station_code=station_code, location_code=location
         )
