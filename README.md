@@ -255,3 +255,5 @@ some settings for NLL are hard coded.
 - `tests/example_gamma.py`: Association using GaMMA
 - `tests/example_harpa_simulations.py`: Simulates events in area, adds random picks and associates
    simulated picks with HARPA.
+- `tests/compare_associators.py`: Comparison of all associators classes against each other on
+   example dataset.
