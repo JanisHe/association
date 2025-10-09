@@ -26,6 +26,14 @@ config = {
     "n_s_picks": 3,
     "n_p_and_s_picks": 3,
     "velocity_model_filename": "../metadata/velocity_model_pyocto",
+    "second_pass_overwrites": {  # Do a second or third association with remaining picks
+        "time_before": 10,
+        "n_picks": 6,
+        "n_p_picks": 3,
+        "n_s_picks": 3,
+        "n_p_and_s_picks": 3,
+        "iterations": 3,  # Number of iterations for association of remaining picks
+    },
 }
 
 # Start association

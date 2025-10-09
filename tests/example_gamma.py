@@ -38,6 +38,7 @@ catalog = interface_gamma(
     picks=pick_df,
     velocity_model=velocity_model,
     config=config,
+    second_pass_iterations=1,  # Number of iterations to associate remaining picks
     verbose=True,
 )
 

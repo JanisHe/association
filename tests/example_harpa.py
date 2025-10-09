@@ -29,7 +29,11 @@ config = {
 }
 
 catalog = interface_harpa(
-    picks=pick_df, stations=station_df, config=config, verbose=0, iterations=1
+    picks=pick_df,
+    stations=station_df,
+    config=config,
+    second_pass_iterations=1,  # Number of iterations to associate remaining picks
+    verbose=0,
 )
 
 # Start localisation with NonLinLoc

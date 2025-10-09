@@ -27,7 +27,7 @@ def interface_gamma(
     config: dict,
     stations: pd.DataFrame,
     velocity_model: Optional[pd.DataFrame] = None,
-    iterations: int = 3,
+    second_pass_iterations: int = 3,
     second_pass: bool = False,
     station_column_renaming: Optional[dict[str, str]] = None,
     pick_column_renaming: Optional[dict[str, str]] = None,
@@ -39,7 +39,7 @@ def interface_gamma(
     :param config:
     :param stations:
     :param velocity_model:
-    :param iterations:
+    :param second_pass_iterations:
     :param second_pass:
     :param station_column_renaming:
     :param pick_column_renaming:
@@ -238,7 +238,7 @@ def interface_gamma(
         event_lst.append(event)
 
     # Start second pass iterations to associate events from remaining picks
-    if iterations > 1:
+    if second_pass_iterations > 0:
         remaining_picks.reset_index(
             drop=True, inplace=True
         )  # Reindexing remaining picks
@@ -247,7 +247,7 @@ def interface_gamma(
             stations=stations,
             velocity_model=velocity_model,
             config=config,
-            iterations=iterations - 1,
+            second_pass_iterations=second_pass_iterations - 1,
             verbose=False,
         )
         event_lst += second_pass_events
@@ -265,7 +265,7 @@ def interface_harpa(
     config: dict,
     stations: pd.DataFrame,
     verbose: int = 10,
-    iterations: int = 3,
+    second_pass_iterations: int = 3,
     second_pass: bool = False,
     station_column_renaming: Optional[dict[str, str]] = None,
     pick_column_renaming: Optional[dict[str, str]] = None,
@@ -276,7 +276,7 @@ def interface_harpa(
     :param config:
     :param stations:
     :param verbose:
-    :param iterations:
+    :param second_pass_iterations:
     :param second_pass:
     :param station_column_renaming:
     :param pick_column_renaming:
@@ -386,7 +386,7 @@ def interface_harpa(
 
     # Run HARPA a second time on no used picks
     # Picks that have not been used are marked with the event_index = -1 in pick_df_out
-    if iterations > 1:
+    if second_pass_iterations > 0:
         remaining_picks = pick_df_out[pick_df_out["event_index"] == -1]
         # Modify remaining picks dataframe
         remaining_picks = remaining_picks.rename(columns={"station_id": "id"})
@@ -396,7 +396,7 @@ def interface_harpa(
             stations=stations,
             verbose=verbose,
             second_pass=True,  # TODO: is second pass required, since only iterations is needed?
-            iterations=iterations - 1,
+            second_pass_iterations=second_pass_iterations - 1,
         )
         event_lst += second_pass_events
 
