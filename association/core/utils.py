@@ -1,4 +1,6 @@
+import copy
 import warnings
+
 import pandas as pd
 
 
@@ -46,9 +48,15 @@ def unique_picks_and_stations(pick_ids: list[str], station_ids: list[str]) -> No
     :param station_ids:
     :return:
     """
+    check_ids = copy.copy(
+        pick_ids
+    )  # Create copy of pick_ids, otherwise loop is not possible
     for pick_id in pick_ids:
         if pick_id in station_ids:
-            pick_ids.remove(pick_id)
-            station_ids.remove(pick_id)
+            check_ids.remove(pick_id)
 
-    warnings.warn(f"Found picks from stations without station information: {pick_ids}")
+    # Print a warning if pick IDs without station information are found
+    if len(check_ids) > 0:
+        warnings.warn(
+            f"Found picks from stations without station information: {check_ids}"
+        )
