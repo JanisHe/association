@@ -175,6 +175,33 @@ catalog = interface_gamma(
 All interface functions return an `obspy.Catalog` that contains all events, including
 the picks.
 
+### Associating Remaining Picks
+After the first association some picks remain. In order to associate events from these
+remaining picks, a `second_pass_iteration` is possible for each associator. This is done
+in PyOcto by modifying the config dictionary, for example:
+```python
+config_pyocto = {
+    "p_velocity": 4500,  # Not necessary when velocity model is used
+    "s_velocity": 2600,  # Not necessary when velocity model is used
+    "zlim": (0, 30),
+    "time_before": 10,
+    "n_picks": 6,
+    "n_p_picks": 3,
+    "n_s_picks": 3,
+    "n_p_and_s_picks": 3,
+    "second_pass_overwrites": {  # Do a second or third association with remaining picks
+        "time_before": 10,
+        "n_picks": 6,
+        "n_p_picks": 3,
+        "n_s_picks": 3,
+        "n_p_and_s_picks": 3,
+        "iterations": 1,  # Number of iterations for association of remaining picks
+    },
+}
+```
+In HARPA and GaMMA both interfaces have the argument `second_pass_iterations` which is an
+`int` and controls the number of additional iterations to associate the remaining picks.
+
 ## Relocalisation with NonLinLoc
 After seismic phase association, the events can be relocalised using [NonLinLoc](http://alomax.free.fr/nlloc/).
 Therefore, a velocity model (see above) is required.
