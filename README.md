@@ -32,7 +32,8 @@ A `.csv` file that contains station information (note the file header!):
 | RG.KUHL.00 | 48.91473 | 7.92996   | 176       |
 | FO.OPS.00  | 48.92126 | 7.88278   | 198       |
 
-- `id`: ID of each station (`network.station.location`)
+- `id`: ID of each station (`network.station.location`)\
+   If `location` is not known use `network.station`
 - `latitude`: Latitude of station in degree
 - `longitude`: Longitude of station in degree
 - `elevation`: Elevation of station in m above sea level
@@ -52,7 +53,8 @@ A `.csv` file that contains all picks from all available stations:
 | RG.KUHL.00 | 2025-04-01 15:31:42.015891 | 0.89125 | P    |
 | RG.KUHL.00 | 2025-04-01 15:31:42.158434 | 0.68523 | S    |
 
-- `id`: ID of station (`network.station.location`)
+- `id`: ID of station (`network.station.location`). Must fit with IDs of station file. \
+   If `location` is not known use `network.station`
 - `timestamp`: Time of pick from PhaseNet
 - `prob`: Pick probability of PhaseNet
 - `type`: Phase type (Either P or S)
