@@ -1,3 +1,7 @@
+"""
+Example to simulate picks in an area and to pick these events with HARPA.
+"""
+
 import time
 
 import numpy as np

@@ -34,17 +34,27 @@ def interface_gamma(
     verbose: bool = False,
 ) -> obspy.Catalog:
     """
+    Interface to start seismic phase association with GaMMA.
+    The interface takes as input a pandas Dataframe with columns of id, timestamp, prob and type, where id
+    is the station ID (network.station.network), timestamp is the time of the pick, prob denotes the
+    output probability of the neural network picker and type is the pick phase type (either P or S).
+    Additionaly, a pandas Dataframe is given with information of the station (ID, latitude, and longitude).
+    The function returns an obspy catalog, where the picks are saved in each event.
 
-    :param picks:
-    :param config:
-    :param stations:
-    :param velocity_model:
-    :param second_pass_iterations:
-    :param second_pass:
-    :param station_column_renaming:
-    :param pick_column_renaming:
-    :param verbose:
-    :return:
+    :param picks: pandas Dataframe for the picks (id, timestamp, prob, type)
+    :param config: Dictionary with relevant settings for GaMMA. For detailed information have a look on the examples
+                   in tests.
+    :param stations: pandas Dataframe containing id, longitude, latitude and elevation in m.
+    :param velocity_model: Dataframe with velocity model
+    :param second_pass_iterations: Number of iterations to perform after associating the first events. In the following
+                                   iterations, the associated picks are removed from all picks and further events can
+                                   be associated from the remaining picks. If second_pass_iterations=0, then only one
+                                   association is done. Default value is 3.
+    :param second_pass: Always False. Only needed for second_pass_iterations with is done in the function.
+    :param station_column_renaming: Dictionary containing original and new key to rename column names in stations.
+    :param pick_column_renaming: Dictionary containing original and new key to rename column names in picks.
+    :param verbose: If True, the settings for the association are printed.
+
     """
     # Import GaMMA here to avoid import when other associator is used
     from gamma.utils import association as association_gamma
@@ -271,16 +281,27 @@ def interface_harpa(
     pick_column_renaming: Optional[dict[str, str]] = None,
 ) -> obspy.Catalog:
     """
+    Interface to start seismic phase association with HARPA.
+    The interface takes as input a pandas Dataframe with columns of id, timestamp, prob and type, where id
+    is the station ID (network.station.network), timestamp is the time of the pick, prob denotes the
+    output probability of the neural network picker and type is the pick phase type (either P or S).
+    Additionaly, a pandas Dataframe is given with information of the station (ID, latitude, and longitude).
+    The function returns an obspy catalog, where the picks are saved in each event.
 
-    :param picks:
-    :param config:
-    :param stations:
-    :param verbose:
+    :param picks: pandas Dataframe for the picks (id, timestamp, prob, type)
+    :param config: Dictionary with relevant settings for GaMMA. For detailed information have a look on the examples
+                   in tests.
+    :param stations: pandas Dataframe containing id, longitude, latitude and elevation in m.
+    :param verbose: Verbosity of HARPA (Numbers between 0 and 10)
     :param second_pass_iterations:
-    :param second_pass:
-    :param station_column_renaming:
-    :param pick_column_renaming:
-    :return:
+    :param second_pass_iterations: Number of iterations to perform after associating the first events. In the following
+                                   iterations, the associated picks are removed from all picks and further events can
+                                   be associated from the remaining picks. If second_pass_iterations=0, then only one
+                                   association is done. Default value is 3.
+    :param second_pass: Always False. Only needed for second_pass_iterations with is done in the function.
+    :param station_column_renaming: Dictionary containing original and new key to rename column names in stations.
+    :param pick_column_renaming: Dictionary containing original and new key to rename column names in picks.
+
     """
     # Import HARPA here to avoid import of other associators
     from harpa import association  # noqa
@@ -409,24 +430,23 @@ def interface_harpa(
 
 
 def interface_pyocto(
-    stations: pd.DataFrame,
     picks: pd.DataFrame,
+    stations: pd.DataFrame,
     config: dict,
     velocity_model: Optional[pd.DataFrame] = None,
     station_column_renaming: Optional[dict[str, str]] = None,
     pick_column_renaming: Optional[dict[str, str]] = None,
+    verbose: bool = False,
 ) -> obspy.Catalog:
     """
+    Interface to start seismic phase association with PyOcto.
+    The interface takes as input a pandas Dataframe with columns of id, timestamp, prob and type, where id
+    is the station ID (network.station.network), timestamp is the time of the pick, prob denotes the
+    output probability of the neural network picker and type is the pick phase type (either P or S).
+    Additionaly, a pandas Dataframe is given with information of the station (ID, latitude, and longitude).
+    The function returns an obspy catalog, where the picks are saved in each event.
 
-    :param stations:
-    :param picks:
-    :param config
-    :param velocity_model:
-    :param station_column_renaming: {"trace_id": "id", "elevation_m": "elevation"}
-    :param pick_column_renaming: {"id": "station", "timestamp": "time", "type": "phase"}
-    :return:
-
-    Required parameters: zlim: tuple[int, int]
+    Required parameters for config: zlim: tuple[int, int] # Depth minimum and maximum of area.
     Required if velocity_model is used: velocity_model_filename: pathname to save velocity model
     Optional if velocity_model is used: tolerance, delta
 
@@ -435,12 +455,28 @@ def interface_pyocto(
     Optional if no velocity_model is used: tolerance
 
     Other parameters/keyword args will be handed over to the PyOcto associator class and will be checked there.
+    Please have a closer look into PyOcto for more necessary keywords.
+
+    :param picks: pandas Dataframe for the picks (id, timestamp, prob, type)
+    :param stations: pandas Dataframe containing id, longitude, latitude and elevation in m..
+    :param config: Dictionary with relevant settings for GaMMA. For detailed information have a look on the examples
+                   in tests.
+    :param velocity_model: Dataframe with velocity model
+    :param station_column_renaming: Dictionary containing original and new key to rename column names in stations.
+    :param pick_column_renaming: Dictionary containing original and new key to rename column names in picks.
+    :param verbose: If True, prints the config for PyOcto
+
     """
     # Import PyOcto to avoid import of other associators
     import pyocto
 
     config = copy.deepcopy(config)  # Create copy of conifg to avoid overwriting
     area = area_limits(stations=stations)  # Get limits and center of area
+
+    if verbose:
+        print("Config for PyOcto")
+        for key, value in config.items():
+            print(f"{key}: {value}")
 
     # Check if velocity_model_path is in config if velocity model is used
     if isinstance(velocity_model, pd.DataFrame):
@@ -584,9 +620,3 @@ def interface_pyocto(
     event_list = sort_events(events=event_list)
 
     return obspy.Catalog(event_list)
-
-
-def association_wrapper(
-    stations: pd.DataFrame, picks: pd.DataFrame, method: str, **kwargs
-):
-    pass

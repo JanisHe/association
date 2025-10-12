@@ -54,6 +54,11 @@ class Event2NLL:
             self.nll_basepath, "conf", f"{self.config_name}.conf"
         )
 
+        # Check whether NLL executable is an available directory
+        if not os.path.isdir(self.nll_executables):
+            msg = f"{self.nll_executables} is not valid directory on your computer to run NonLinLoc."
+            raise ValueError(msg)
+
         # Read stations
         if isinstance(stations_df, pd.DataFrame):
             self.df_stations = stations_df
@@ -361,9 +366,10 @@ def update_events_from_nll(
 def check_nll_time(stations: Union[str, pd.DataFrame], nll_basepath: str) -> bool:
     """
     Check whether for each station_picks all required files in time directory exist.
-    If all files exist, function returns True, otherwise False
-    :param stations:
-    :param nll_basepath:
+    If all files exist, function returns True, otherwise False.
+
+    :param stations: Dataframe that contains station information (ID, latitude, longitude, elevation)
+    :param nll_basepath: Pathname to save NonLinLoc model files.
     """
     if isinstance(stations, pd.DataFrame):
         df_stations = stations

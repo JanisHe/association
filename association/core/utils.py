@@ -5,6 +5,16 @@ import pandas as pd
 
 
 def area_limits(stations: pd.DataFrame, lat_lon_eps: float = 0.2) -> dict:
+    """
+    Finding limits of area of interest from a given list of stations and adds lat_lon_eps to the
+    edges of the area.
+    The function returns a dictionary with min and max values for latitude and longitude and the
+    center of the area.
+
+    :param stations: Dataframe containing information about the station (ID, latitude, longitude)
+    :param lat_lon_eps: Adding small error to the edges of the area.
+           Default is 0.2
+    """
     limits = {
         "latitude": (
             min(stations["latitude"]) - lat_lon_eps,
@@ -26,6 +36,11 @@ def area_limits(stations: pd.DataFrame, lat_lon_eps: float = 0.2) -> dict:
 
 
 def sort_events(events: list):
+    """
+    Sorts a list of obspy events by dates and returns the sorted event list.
+
+    :param events: List containing obspy events.
+    """
     # Create list with all dates
     dates = [event.origins[0].time.datetime for event in events]
 
@@ -42,11 +57,11 @@ def sort_events(events: list):
 
 def unique_picks_and_stations(pick_ids: list[str], station_ids: list[str]) -> None:
     """
-    Check if each id in picks as information in stations
+    Check if each id in picks information is in stations.
+    For picks without station information, a warning will be printed.
 
-    :param pick_ids:
-    :param station_ids:
-    :return:
+    :param pick_ids: list containing all station IDs from the picks.
+    :param station_ids: list containing all station IDs from the stations.
     """
     check_ids = copy.copy(
         pick_ids
