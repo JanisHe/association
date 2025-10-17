@@ -114,12 +114,15 @@ def moveout(
 
     for idx, event in enumerate(catalog):
         # origin_time = event.origins[-1].datetime
-        p_picks = []
-        s_picks = []
-        p_latitudes = []
-        p_longitudes = []
-        s_latitudes = []
-        s_longitudes = []
+        p_picks = []  # Empty list P pick times
+        s_picks = []  # Empty list for S pick times
+        p_latitudes = []  # Empty list for latitude for P picks
+        p_longitudes = []  # Empty list for longitude for P picks
+        s_latitudes = []  # Empty list for latitude for S picks
+        s_longitudes = []  # Empty list for latitude for S picks
+        origin_times = []
+        origin_lattitudes = []
+        origin_longitudes = []
         for pick in event.picks:
             # Find latitude and longitude of station
             station_code = (
@@ -140,15 +143,10 @@ def moveout(
                 s_latitudes.append(stations.loc[station_idx, "latitude"])
                 s_longitudes.append(stations.loc[station_idx, "longitude"])
 
-        # Sort latitudes
-        # zipped = zip(p_latitudes, p_picks)
-
-        # Plot moveout
-        # ax.plot(p_picks,
-        #         p_latitudes,
-        #         color="grey",
-        #         linestyle="--",
-        #         linewidth=0.5)
+            # Add times and locations to empty origin lists
+            origin_times.append(event.origins[-1].time.datetime)
+            origin_lattitudes.append(event.origins[-1].latitude)
+            origin_longitudes.append(event.origins[-1].longitude)
 
         # Plot P-picks
         if ax_lat:
@@ -174,4 +172,27 @@ def moveout(
                 color=colors[idx],
                 edgecolors=["k"] * len(s_picks),
                 rasterized=True,
+            )
+
+        # Plot origins
+        if ax_lat:
+            ax_lat.scatter(
+                x=origin_times,
+                y=origin_lattitudes,
+                color=colors[idx],
+                marker="P",
+                edgecolors=["k"] * len(origin_times),
+                rasterized=True,
+                s=60,
+            )
+
+        if ax_lon:
+            ax_lon.scatter(
+                x=origin_times,
+                y=origin_longitudes,
+                color=colors[idx],
+                edgecolors=["k"] * len(origin_times),
+                marker="P",
+                rasterized=True,
+                s=60,
             )
