@@ -507,6 +507,8 @@ def interface_pyocto(
         velocity_model = pyocto.VelocityModel1D(
             path=config.pop("velocity_model_filename"),
             tolerance=config["tolerance"] if config.get("tolerance") else 2.0,
+            association_cutoff_distance=config.pop("association_cutoff_distance", None),
+            location_cutoff_distance=config.pop("location_cutoff_distance", None),
         )
     else:  # Constant velocity model
         velocity_model = pyocto.VelocityModel0D(
